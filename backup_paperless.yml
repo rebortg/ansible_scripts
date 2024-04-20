@@ -1,0 +1,86 @@
+---
+- name: paperless docker volume backup
+  hosts: all
+  remote_user: root
+
+  tasks:
+  - name: Ensure Backup Directory Exists
+    file:
+      path: /tmp/backup_paperless
+      state: directory
+      mode: 0755
+
+  - name: Archive the directory paperless_data
+    ansible.builtin.archive:
+      path: /var/lib/docker/volumes/paperless_data
+      dest: "/tmp/backup_paperless/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless_data.tar.gz"
+    register: backup_script_output
+
+  - name: Archive the directory paperless_media
+    ansible.builtin.archive:
+      path: /var/lib/docker/volumes/paperless_media
+      dest: "/tmp/backup_paperless/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless_media.tar.gz"
+    register: backup_script_output
+    when: backup_script_output.failed == false
+
+  - name: Archive the directory paperless_pgdata
+    ansible.builtin.archive:
+      path: /var/lib/docker/volumes/paperless_pgdata
+      dest: "/tmp/backup_paperless/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless_pgdata.tar.gz"
+    register: backup_script_output
+    when: backup_script_output.failed == false
+
+  - name: Archive the directory paperless_redisdata
+    ansible.builtin.archive:
+      path: /var/lib/docker/volumes/paperless_redisdata
+      dest: "/tmp/backup_paperless/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless_redisdata.tar.gz"
+    register: backup_script_output
+    when: backup_script_output.failed == false
+
+  - name: Archive the directory /opt/paperless
+    ansible.builtin.archive:
+      path: /opt/paperless-ngx/
+      dest: "/tmp/backup_paperless/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless_opt.tar.gz"
+    register: backup_script_output
+    when: backup_script_output.failed == false
+
+  - name: Archive the directory backup
+    ansible.builtin.archive:
+      path: /tmp/backup_paperless
+      dest: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless.tar.gz"
+    register: backup_script_output
+    when: backup_script_output.failed == false
+
+  - name: Mount NFS share
+    mount:
+      path: /mnt
+      src: robnas:/mnt/md0/backup
+      fstype: nfs
+      state: mounted
+    delegate_to: localhost
+
+  - name: Copy Backup to Control Node
+    fetch:
+      src: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless.tar.gz"
+      dest: "/mnt/nextcloud"
+      flat: yes
+    when: backup_script_output.failed == false
+
+  - name: Unmount NFS share
+    mount:
+      path: /mnt
+      state: absent
+    delegate_to: localhost
+
+
+  - name: delete backup folder on remote
+    file:
+      path: /tmp/backup_paperless
+      state: absent
+    when: backup_script_output.failed == false
+
+  - name: delete backup file on remote
+    file:
+      path: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_paperless.tar.gz"
+      state: absent
+    when: backup_script_output.failed == false

@@ -1,0 +1,43 @@
+---
+- name: Backup Mailcow
+  hosts: all
+  remote_user: root
+
+  tasks:
+  - name: Ensure Backup Directory Exists
+    file:
+      path: /tmp/backup_mailcow
+      state: directory
+      mode: 0755
+  
+  - name: run backupscript
+    command: "/opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh backup all"
+    register: backup_script_output
+
+  - name: Archive the directory on remote host
+    ansible.builtin.archive:
+      path: /tmp/backup_mailcow
+      dest: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_mailcow.tar.gz"
+    register: archive_result
+    when: backup_script_output.rc == 0
+
+  - name: ensure local backup dir is present
+    file:
+      path: "./backup_mailcow"
+      state: directory
+      mode: 0755
+    delegate_to: localhost
+    when: backup_script_output.rc == 0
+  
+  - name: Copy Backup to Control Node
+    fetch:
+      src: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_mailcow.tar.gz"
+      dest: "./backup_mailcow"
+      flat: yes
+    when: backup_script_output.rc == 0
+  
+  - name: delete backup on remote
+    file:
+      path: /tmp/backup_mailcow
+      state: absent
+    when: backup_script_output.rc == 0
