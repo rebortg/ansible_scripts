@@ -57,6 +57,7 @@
       src: robnas:/mnt/md0/backup
       fstype: nfs
       state: mounted
+    become: yes
     delegate_to: localhost
 
   - name: Copy Backup to Control Node
