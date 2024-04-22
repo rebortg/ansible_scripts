@@ -1,33 +1,27 @@
 ---
-- name: Nextcloud DB docker volume backup
-  hosts: all
-  remote_user: root
+  
+- name: Archive the directory on remote host
+  ansible.builtin.archive:
+    path: /var/lib/docker/volumes/nextcloud_db
+    dest: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz"
+  register: backup_script_output
 
-  tasks:
-  
-  - name: Archive the directory on remote host
-    ansible.builtin.archive:
-      path: /var/lib/docker/volumes/nextcloud_db
-      dest: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz"
-    register: backup_script_output
+- name: ensure local backup dir is present
+  file:
+    path: "./backup_netxcloud_db"
+    state: directory
+    mode: 0755
+  delegate_to: localhost
+  when: backup_script_output.failed == false
 
-  - name: ensure local backup dir is present
-    file:
-      path: "./backup_netxcloud_db"
-      state: directory
-      mode: 0755
-    delegate_to: localhost
-    when: backup_script_output.rc == 0
-  
-  - name: Copy Backup to Control Node
-    fetch:
-      src: "/tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz"
-      dest: "./backup_netxcloud_db"
-      flat: yes
-    when: backup_script_output.failed == false
-  
-  - name: delete backup on remote
-    file:
-      path: /tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz"
-      state: absent
-    when: backup_script_output.failed == false
+- name: Copy Backup to nfs
+  command:
+    cmd: "cp /tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz /mnt/nextcloud"
+  become: yes
+  when: backup_script_output.failed == false
+
+- name: delete backup on remote
+  file:
+    path: /tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz"
+    state: absent
+  when: backup_script_output.failed == false

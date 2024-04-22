@@ -1,0 +1,25 @@
+---
+- name: Install nfs-common
+  apt:
+    name: nfs-common
+    state: present
+  become: yes
+
+- name: Mount NFS share
+  mount:
+    path: /mnt
+    src: 192.168.188.201:/mnt/md0/backup
+    fstype: nfs
+    state: mounted
+  become: yes
+
+- name: Ensure Backup Directory Exists
+  file:
+    path: "/mnt/{{ item }}"
+    state: directory
+    mode: 0755
+  become: yes
+  loop:
+    - paperless
+    - mailcow
+    - nextcloud

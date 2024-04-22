@@ -1,0 +1,7 @@
+---
+
+- name: Unmount NFS share
+  mount:
+    path: /mnt
+    state: absent
+  become: yes

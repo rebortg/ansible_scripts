@@ -1,0 +1,16 @@
+---
+- name: backup srv3
+  hosts: all
+  remote_user: root
+
+  tasks:
+    - block:
+        - include_tasks: backup_prepare.yml
+        - include_tasks: backup_paperless.yml
+        - include_tasks: backup_nextclouddb.yml
+        - include_tasks: backup_mailcow.yml
+        - include_tasks: backup_cleanup.yml
+      rescue:
+        - name: Fail
+          debug:
+            msg: "Backup failed"
