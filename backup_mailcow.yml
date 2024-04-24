@@ -9,6 +9,9 @@
 - name: run backupscript
   command: "/opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh backup all"
   register: backup_script_output
+  become: yes
+  environment:
+    MAILCOW_BACKUP_LOCATION: /tmp/backup_mailcow
 
 - name: Archive the directory on remote host
   ansible.builtin.archive:
@@ -17,9 +20,9 @@
   register: archive_result
   when: backup_script_output.rc == 0
 
-- name: Copy Backup to nfs
+- name: move Backup to nfs
   command:
-    cmd: "cp /tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_mailcow.tar.gz /mnt/mailcow"
+    cmd: "mv /tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_mailcow.tar.gz /mnt/mailcow"
   become: yes
   when: backup_script_output.rc == 0
 
