@@ -30,6 +30,3 @@
     path: /tmp/{{ lookup('pipe', 'date +%Y%m%d') }}_backup_nextcloud_db.tar.gz"
     state: absent
   when: backup_script_output.failed == false
-
-
-var/lib/docker/volumes/nextcloud_nextcloud/_data/data
