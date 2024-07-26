@@ -22,7 +22,7 @@
 
 - name: delete all files older than 15 days
   command:
-    cmd: "find /mnt/nextcloud -type f -mtime +15 -exec rm -f {} \;"
+    cmd: "find /mnt/nextcloud -type f -mtime +15 -exec rm -f {} \\;"
   become: yes
   when: backup_script_output.failed == false
 
