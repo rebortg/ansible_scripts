@@ -53,6 +53,12 @@
   become: yes
   when: backup_script_output.failed == false
 
+- name: delete all files older than 15 days
+  command:
+    cmd: "find /mnt/paperless -type f -mtime +15 -exec rm -f {} \\;"
+  become: yes
+  when: backup_script_output.failed == false
+
 - name: delete backup folder on remote
   file:
     path: /tmp/backup_paperless

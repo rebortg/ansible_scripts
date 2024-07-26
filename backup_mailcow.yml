@@ -26,6 +26,12 @@
   become: yes
   when: backup_script_output.rc == 0
 
+- name: delete all files older than 15 days
+  command:
+    cmd: "find /mnt/mailcow -type f -mtime +15 -exec rm -f {} \;"
+  become: yes
+  when: backup_script_output.rc == 0
+
 - name: delete backup on remote
   file:
     path: /tmp/backup_mailcow

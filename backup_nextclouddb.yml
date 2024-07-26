@@ -20,6 +20,13 @@
   become: yes
   when: backup_script_output.failed == false
 
+- name: delete all files older than 15 days
+  command:
+    cmd: "find /mnt/nextcloud -type f -mtime +15 -exec rm -f {} \;"
+  become: yes
+  when: backup_script_output.failed == false
+
+
 #- name: rsync data folder to /mnt/nextcloud
 #  command:
 #    cmd: "rsync -a /var/lib/docker/volumes/nextcloud_nextcloud/_data/data /mnt/nextcloud_data"
